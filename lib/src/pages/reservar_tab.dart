@@ -11,7 +11,9 @@ class ReservarTab extends StatefulWidget {
 class _ReservarTabState extends State<ReservarTab> {
   String _nombre = '';
   String _fecha = '';
+  String _hora = '';
   final TextEditingController _inputFieldController = TextEditingController();
+  final TextEditingController _horaController = TextEditingController();
 
   String _opcionSeleccionadaDropdown = 'Sin dato';
 
@@ -32,6 +34,19 @@ class _ReservarTabState extends State<ReservarTab> {
     return calendario;
   }
 
+  Future<void> _selectTime(BuildContext context) async {
+    TimeOfDay? hora = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (hora != null) {
+      setState(() {
+        _hora = '${hora.hour.toString().padLeft(2, '0')}:${hora.minute.toString().padLeft(2, '0')}';
+        _horaController.text = _hora;
+      });
+    }
+  }
+
   List<DropdownMenuItem<String>> getOpcionesDropdown() {
     List<DropdownMenuItem<String>> lista = [
       DropdownMenuItem(value: 'Sin dato', child: Text('Sin dato')),
@@ -49,6 +64,9 @@ class _ReservarTabState extends State<ReservarTab> {
     }
     if (_fecha.isEmpty) {
       errores = errores + 'Falta elegir la fecha\n';
+    }
+    if (_hora.isEmpty) {
+      errores = errores + 'Falta elegir la hora\n';
     }
     if (_opcionSeleccionadaDropdown == 'Sin dato') {
       errores = errores + 'Falta elegir el servicio\n';
@@ -88,7 +106,7 @@ class _ReservarTabState extends State<ReservarTab> {
       builder: (context) {
         return AlertDialog(
           title: Text('Confirmar turno'),
-          content: Text('Nombre: $_nombre\nFecha: $_fecha\nServicio: $_opcionSeleccionadaDropdown'),
+          content: Text('Nombre: $_nombre\nFecha: $_fecha\nHora: $_hora\nServicio: $_opcionSeleccionadaDropdown'),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
@@ -103,6 +121,7 @@ class _ReservarTabState extends State<ReservarTab> {
                 widget.onReservar({
                   'nombre': _nombre,
                   'fecha': _fecha,
+                  'hora': _hora,
                   'servicio': _opcionSeleccionadaDropdown,
                 });
               },
@@ -148,6 +167,21 @@ class _ReservarTabState extends State<ReservarTab> {
           },
         ),
         SizedBox(height: 20),
+        TextField(
+          controller: _horaController,
+          enableInteractiveSelection: false,
+          decoration: InputDecoration(
+            border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+            labelText: 'Hora del turno',
+            suffixIcon: Icon(Icons.access_time),
+            icon: Icon(Icons.schedule),
+          ),
+          onTap: () {
+            FocusScope.of(context).requestFocus(FocusNode());
+            _selectTime(context);
+          },
+        ),
+        SizedBox(height: 20),
         Row(
           children: [
             Icon(Icons.content_cut),
@@ -175,4 +209,4 @@ class _ReservarTabState extends State<ReservarTab> {
       ],
     );
   }
-}
+}
