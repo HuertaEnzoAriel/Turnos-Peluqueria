@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_theme.dart';
 
 class TurnosTab extends StatelessWidget {
   final List<Map<String, String>> turnos;
@@ -16,8 +17,11 @@ class TurnosTab extends StatelessWidget {
         final t = turnos[i];
         return Card(
           child: ListTile(
-            leading: Icon(Icons.event, color: Colors.indigo),
-            title: Text(t['servicio']!),
+            leading: CircleAvatar(
+              backgroundColor: AppColores.negro,
+              child: Icon(Icons.event, color: AppColores.dorado),
+            ),
+            title: Text(t['servicio']!, style: TextStyle(fontWeight: FontWeight.w600)),
             subtitle: Text('${t['nombre']} - ${t['fecha']}'),
           ),
         );

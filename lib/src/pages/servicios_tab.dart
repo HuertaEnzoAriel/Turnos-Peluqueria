@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_theme.dart';
 
 class ServiciosTab extends StatelessWidget {
   final String email;
@@ -16,14 +17,24 @@ class ServiciosTab extends StatelessWidget {
     return ListView(
       padding: EdgeInsets.all(16),
       children: [
-        Text('Bienvenido, $email', style: TextStyle(fontSize: 16)),
+        Text('Bienvenido, $email', style: TextStyle(fontSize: 16, color: AppColores.negro)),
         SizedBox(height: 10),
         for (final s in _servicios)
           Card(
             child: ListTile(
-              leading: Icon(s['icono'], color: Colors.indigo),
-              title: Text(s['nombre']),
-              trailing: Text('\$${s['precio']}'),
+              leading: CircleAvatar(
+                backgroundColor: AppColores.negro,
+                child: Icon(s['icono'], color: AppColores.dorado),
+              ),
+              title: Text(s['nombre'], style: TextStyle(fontWeight: FontWeight.w600)),
+              trailing: Text(
+                '\$${s['precio']}',
+                style: TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColores.doradoOscuro,
+                ),
+              ),
             ),
           ),
       ],

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../app_theme.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -47,12 +48,28 @@ class _LoginPageState extends State<LoginPage> {
       body: ListView(
         padding: EdgeInsets.symmetric(horizontal: 30, vertical: 80),
         children: [
-          Icon(Icons.content_cut, size: 90, color: Colors.indigo),
-          SizedBox(height: 10),
+          Center(
+            child: CircleAvatar(
+              radius: 60,
+              backgroundColor: AppColores.negro,
+              child: Icon(Icons.content_cut, size: 60, color: AppColores.dorado),
+            ),
+          ),
+          SizedBox(height: 16),
           Text(
-            'Peluquería',
+            'PELUQUERÍA',
             textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+            style: TextStyle(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              letterSpacing: 4,
+              color: AppColores.negro,
+            ),
+          ),
+          Text(
+            'Cortes · Barba · Color',
+            textAlign: TextAlign.center,
+            style: TextStyle(fontSize: 14, color: AppColores.doradoOscuro),
           ),
           SizedBox(height: 40),
           TextField(

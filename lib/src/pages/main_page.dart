@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import '../app_theme.dart';
 import 'servicios_tab.dart';
 import 'reservar_tab.dart';
 import 'turnos_tab.dart';
@@ -23,7 +24,7 @@ class _MainPageState extends State<MainPage> {
 
   @override
   Widget build(BuildContext context) {
-    final String email = ModalRoute.of(context)!.settings.arguments as String;
+    final String email = ModalRoute.of(context)!.settings.arguments as String? ?? 'sin dato';
 
     final List<Widget> pantallas = [
       ServiciosTab(email: email),
@@ -40,20 +41,17 @@ class _MainPageState extends State<MainPage> {
               'assets/icons/tijera.svg',
               width: 24,
               height: 24,
-              colorFilter: ColorFilter.mode(
-                Theme.of(context).colorScheme.onSurface,
-                BlendMode.srcIn,
-              ),
+              colorFilter: ColorFilter.mode(AppColores.dorado, BlendMode.srcIn),
             ),
             SizedBox(width: 8),
-            Text('Peluquería'),
+            Text('PELUQUERÍA'),
           ],
         ),
         centerTitle: true,
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
-            onPressed: () => Navigator.pushReplacementNamed(context, 'login'),
+            onPressed: () => Navigator.pushReplacementNamed(context, '/'),
           ),
         ],
       ),
