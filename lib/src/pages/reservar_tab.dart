@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 
 class ReservarTab extends StatefulWidget {
+  final List<Map<String, dynamic>> servicios;
   final Function(Map<String, String>) onReservar;
-  const ReservarTab({super.key, required this.onReservar});
+  const ReservarTab({super.key, required this.servicios, required this.onReservar});
   @override
   State<ReservarTab> createState() => _ReservarTabState();
 }
@@ -12,7 +13,6 @@ class _ReservarTabState extends State<ReservarTab> {
   String _fecha = '';
   final TextEditingController _inputFieldController = TextEditingController();
 
-  final List<String> _servicios = ['Sin dato', 'Corte de pelo', 'Barba', 'Color', 'Peinado'];
   String _opcionSeleccionadaDropdown = 'Sin dato';
 
   Future<DateTime?> _selectDate(BuildContext context) async {
@@ -21,6 +21,7 @@ class _ReservarTabState extends State<ReservarTab> {
       initialDate: DateTime.now(),
       firstDate: DateTime.now(),
       lastDate: DateTime(2030),
+      locale: const Locale('es', 'ES'),
     );
     if (calendario != null) {
       setState(() {
@@ -32,9 +33,11 @@ class _ReservarTabState extends State<ReservarTab> {
   }
 
   List<DropdownMenuItem<String>> getOpcionesDropdown() {
-    List<DropdownMenuItem<String>> lista = [];
-    for (var servicio in _servicios) {
-      lista.add(DropdownMenuItem(value: servicio, child: Text(servicio)));
+    List<DropdownMenuItem<String>> lista = [
+      DropdownMenuItem(value: 'Sin dato', child: Text('Sin dato')),
+    ];
+    for (var servicio in widget.servicios) {
+      lista.add(DropdownMenuItem(value: servicio['nombre'], child: Text(servicio['nombre'])));
     }
     return lista;
   }
