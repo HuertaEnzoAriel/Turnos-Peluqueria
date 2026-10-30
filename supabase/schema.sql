@@ -26,9 +26,13 @@ create table if not exists public.turnos (
   id             bigint generated always as identity primary key,
   nombre_cliente text   not null check (char_length(trim(nombre_cliente)) > 0),
   fecha          date   not null,
+  hora           time   not null,
   servicio_id    bigint not null references public.servicios (id) on delete restrict,
   created_at     timestamptz not null default now()
 );
+
+-- Si la tabla ya existía de antes (sin la hora), le agrega la columna
+alter table public.turnos add column if not exists hora time;
 
 create index if not exists turnos_servicio_id_idx on public.turnos (servicio_id);
 

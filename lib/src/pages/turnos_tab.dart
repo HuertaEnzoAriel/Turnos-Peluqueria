@@ -22,10 +22,10 @@ class TurnosTab extends StatelessWidget {
               child: Icon(Icons.event, color: AppColores.dorado),
             ),
             title: Text(t['servicio']!, style: TextStyle(fontWeight: FontWeight.w600)),
-            subtitle: Text('${t['nombre']} - ${t['fecha']}'),
+            subtitle: Text('${t['nombre']} - ${t['fecha']} ${t['hora']}'),
           ),
         );
       },
     );
   }
-}
+}
