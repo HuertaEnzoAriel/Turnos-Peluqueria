@@ -2,6 +2,25 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 final supabase = Supabase.instance.client;
 
+// ---------------- LOGIN ----------------
+
+// Devuelve null si entró bien, o el mensaje de error para mostrar
+Future<String?> login(String email, String password) async {
+  try {
+    await supabase.auth.signInWithPassword(email: email, password: password);
+    return null;
+  } on AuthException catch (e) {
+    if (e.code == 'invalid_credentials') {
+      return 'Email o contraseña incorrectos';
+    }
+    return e.message;
+  }
+}
+
+Future<void> logout() async {
+  await supabase.auth.signOut();
+}
+
 // ---------------- SERVICIOS ----------------
 
 Future<List<Map<String, dynamic>>> getServicios() async {

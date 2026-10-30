@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../app_theme.dart';
+import '../services/supabase_services.dart';
 import 'servicios_tab.dart';
 import 'reservar_tab.dart';
 import 'turnos_tab.dart';
@@ -51,7 +52,11 @@ class _MainPageState extends State<MainPage> {
         actions: [
           IconButton(
             icon: Icon(Icons.logout),
-            onPressed: () => Navigator.pushReplacementNamed(context, '/'),
+            onPressed: () async {
+              await logout();
+              if (!context.mounted) return;
+              Navigator.pushReplacementNamed(context, '/');
+            },
           ),
         ],
       ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../services/supabase_services.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -11,13 +12,23 @@ class _LoginPageState extends State<LoginPage> {
   String _email = '';
   String _password = '';
 
-  void _ingresar() {
+  void _ingresar() async {
     if (_email.trim().isEmpty || _password.isEmpty) {
       _alertaError('Completá el email y la contraseña');
-    } else if (_email.trim() != 'admin@peluqueria.com' || _password != '1234') {
-      _alertaError('Email o contraseña incorrectos');
-    } else {
-      Navigator.pushReplacementNamed(context, 'home', arguments: _email.trim());
+      return;
+    }
+    try {
+      // El usuario se valida contra Supabase Auth (Authentication → Users)
+      final error = await login(_email.trim(), _password);
+      if (!mounted) return;
+      if (error != null) {
+        _alertaError(error);
+      } else {
+        Navigator.pushReplacementNamed(context, 'home', arguments: _email.trim());
+      }
+    } catch (e) {
+      if (!mounted) return;
+      _alertaError('No se pudo conectar con el servidor:\n$e');
     }
   }
 
@@ -108,7 +119,7 @@ class _LoginPageState extends State<LoginPage> {
           ),
           SizedBox(height: 20),
           Text(
-            'Demo: admin@peluqueria.com / 1234',
+            'Demo: admin@peluqueria.com / 123456',
             textAlign: TextAlign.center,
             style: TextStyle(color: Colors.grey),
           ),

@@ -50,15 +50,17 @@ on conflict (nombre) do nothing;
 
 -- -------------------------------------------------------------
 -- 4. Permisos
--- La app usa la clave publishable y el login es local (no usa
--- Supabase Auth), así que las consultas llegan con el rol "anon".
+-- La app inicia sesión con Supabase Auth, así que las consultas
+-- llegan con el rol "authenticated". Sin login (rol "anon", solo
+-- con la clave publishable) no se puede leer ni modificar nada.
 -- Solo se habilita lo que la app hace: ver/crear/editar servicios
 -- y ver/crear/borrar turnos.
 -- (La cátedra, para practicar, desmarca "Enable RLS" en el Table
 -- Editor; acá se deja activado con políticas, como en producción.)
 -- -------------------------------------------------------------
-grant select, insert, update on public.servicios to anon, authenticated;
-grant select, insert, delete on public.turnos    to anon, authenticated;
+revoke all on public.servicios, public.turnos from anon;
+grant select, insert, update on public.servicios to authenticated;
+grant select, insert, delete on public.turnos    to authenticated;
 
 alter table public.servicios enable row level security;
 alter table public.turnos    enable row level security;
@@ -71,19 +73,19 @@ drop policy if exists "turnos_insert"    on public.turnos;
 drop policy if exists "turnos_delete"    on public.turnos;
 
 create policy "servicios_select" on public.servicios
-  for select to anon, authenticated using (true);
+  for select to authenticated using (true);
 
 create policy "servicios_insert" on public.servicios
-  for insert to anon, authenticated with check (true);
+  for insert to authenticated with check (true);
 
 create policy "servicios_update" on public.servicios
-  for update to anon, authenticated using (true) with check (true);
+  for update to authenticated using (true) with check (true);
 
 create policy "turnos_select" on public.turnos
-  for select to anon, authenticated using (true);
+  for select to authenticated using (true);
 
 create policy "turnos_insert" on public.turnos
-  for insert to anon, authenticated with check (fecha >= current_date);
+  for insert to authenticated with check (fecha >= current_date);
 
 create policy "turnos_delete" on public.turnos
-  for delete to anon, authenticated using (true);
+  for delete to authenticated using (true);
