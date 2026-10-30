@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'src/app_theme.dart';
@@ -6,9 +7,12 @@ import 'src/pages/routes/routes.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await dotenv.load(fileName: '.env');
+
   await Supabase.initialize(
-    url: 'https://snimdlortsqtybhcqeqv.supabase.co',
-    publishableKey: 'sb_publishable_XtSxHr6PsNMmNVzO_dQZhw_zgk5tUWs',
+    url: dotenv.get('SUPABASE_URL'),
+    publishableKey: dotenv.get('SUPABASE_PUBLISHABLE_KEY'),
   );
   runApp(const MyApp());
 }

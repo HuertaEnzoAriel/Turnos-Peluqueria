@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import '../services/supabase_services.dart';
 
 class ServicioPage extends StatefulWidget {
   const ServicioPage({super.key});
@@ -19,13 +20,24 @@ class _ServicioPageState extends State<ServicioPage> {
     super.dispose();
   }
 
-  void _guardar(Map<String, dynamic>? servicio) {
+  void _guardar(Map<String, dynamic>? servicio) async {
     if (_formKey.currentState!.validate()) {
-      Navigator.pop(context, {
-        'nombre': _nombreCtrl.text.trim(),
-        'precio': int.parse(_precioCtrl.text.trim()),
-        'icono': servicio == null ? Icons.content_cut : servicio['icono'],
-      });
+      final nombre = _nombreCtrl.text.trim();
+      final precio = int.parse(_precioCtrl.text.trim());
+      try {
+        if (servicio == null) {
+          await addServicio(nombre, precio);
+        } else {
+          await updateServicio(servicio['id'], nombre, precio);
+        }
+        if (!mounted) return;
+        Navigator.pop(context);
+      } catch (e) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo guardar el servicio: $e')),
+        );
+      }
     }
   }
 

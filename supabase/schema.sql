@@ -53,10 +53,12 @@ on conflict (nombre) do nothing;
 -- La app usa la clave publishable y el login es local (no usa
 -- Supabase Auth), así que las consultas llegan con el rol "anon".
 -- Solo se habilita lo que la app hace: ver/crear/editar servicios
--- y ver/crear turnos. No se permite borrar.
+-- y ver/crear/borrar turnos.
+-- (La cátedra, para practicar, desmarca "Enable RLS" en el Table
+-- Editor; acá se deja activado con políticas, como en producción.)
 -- -------------------------------------------------------------
 grant select, insert, update on public.servicios to anon, authenticated;
-grant select, insert         on public.turnos    to anon, authenticated;
+grant select, insert, delete on public.turnos    to anon, authenticated;
 
 alter table public.servicios enable row level security;
 alter table public.turnos    enable row level security;
@@ -66,6 +68,7 @@ drop policy if exists "servicios_insert" on public.servicios;
 drop policy if exists "servicios_update" on public.servicios;
 drop policy if exists "turnos_select"    on public.turnos;
 drop policy if exists "turnos_insert"    on public.turnos;
+drop policy if exists "turnos_delete"    on public.turnos;
 
 create policy "servicios_select" on public.servicios
   for select to anon, authenticated using (true);
@@ -81,3 +84,6 @@ create policy "turnos_select" on public.turnos
 
 create policy "turnos_insert" on public.turnos
   for insert to anon, authenticated with check (fecha >= current_date);
+
+create policy "turnos_delete" on public.turnos
+  for delete to anon, authenticated using (true);

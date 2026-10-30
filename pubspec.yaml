@@ -9,6 +9,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_dotenv: ^6.0.1
   flutter_localizations:
     sdk: flutter
   flutter_svg: ^2.3.0
@@ -24,3 +25,4 @@ flutter:
 
   assets:
     - assets/icons/
+    - .env

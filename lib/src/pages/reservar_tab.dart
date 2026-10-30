@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:supabase_flutter/supabase_flutter.dart';
+import '../services/supabase_services.dart';
 
 class ReservarTab extends StatefulWidget {
-  final List<Map<String, dynamic>> servicios;
-  final Function(Map<String, String>) onReservar;
-  const ReservarTab({super.key, required this.servicios, required this.onReservar});
+  final Function() onReservar;
+  const ReservarTab({super.key, required this.onReservar});
   @override
   State<ReservarTab> createState() => _ReservarTabState();
 }
@@ -18,6 +17,28 @@ class _ReservarTabState extends State<ReservarTab> {
   final TextEditingController _horaController = TextEditingController();
 
   String _opcionSeleccionadaDropdown = 'Sin dato';
+  List<Map<String, dynamic>> _servicios = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _cargarServicios();
+  }
+
+  // Se cargan una sola vez para el dropdown (no en build, porque cada
+  // letra del nombre hace setState y volvería a consultar Supabase)
+  void _cargarServicios() async {
+    try {
+      final servicios = await getServicios();
+      if (!mounted) return;
+      setState(() {
+        _servicios = servicios;
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _alertaError('No se pudieron cargar los servicios:\n$e');
+    }
+  }
 
   Future<DateTime?> _selectDate(BuildContext context) async {
     DateTime? calendario = await showDatePicker(
@@ -54,7 +75,7 @@ class _ReservarTabState extends State<ReservarTab> {
     List<DropdownMenuItem<String>> lista = [
       DropdownMenuItem(value: 'Sin dato', child: Text('Sin dato')),
     ];
-    for (var servicio in widget.servicios) {
+    for (var servicio in _servicios) {
       lista.add(DropdownMenuItem(value: servicio['nombre'], child: Text(servicio['nombre'])));
     }
     return lista;
@@ -132,28 +153,11 @@ class _ReservarTabState extends State<ReservarTab> {
   }
 
   Future<void> _guardarTurno() async {
+    // Busca el id del servicio elegido en el dropdown
+    final servicio = _servicios.firstWhere((s) => s['nombre'] == _opcionSeleccionadaDropdown);
     try {
-      // Busca el id del servicio elegido en la tabla servicios
-      final servicio = await Supabase.instance.client
-          .from('servicios')
-          .select('id')
-          .eq('nombre', _opcionSeleccionadaDropdown)
-          .single();
-
-      // Inserta el turno: cada clave es una columna de la tabla turnos
-      await Supabase.instance.client.from('turnos').insert({
-        'nombre_cliente': _nombre.trim(),
-        'fecha': _fechaDb,
-        'hora': _hora,
-        'servicio_id': servicio['id'],
-      });
-
-      widget.onReservar({
-        'nombre': _nombre,
-        'fecha': _fecha,
-        'hora': _hora,
-        'servicio': _opcionSeleccionadaDropdown,
-      });
+      await addTurno(_nombre.trim(), _fechaDb, _hora, servicio['id']);
+      widget.onReservar();
     } catch (e) {
       if (!mounted) return;
       _alertaError('No se pudo guardar el turno:\n$e');
