@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ReservarTab extends StatefulWidget {
   final List<Map<String, dynamic>> servicios;
@@ -11,6 +12,7 @@ class ReservarTab extends StatefulWidget {
 class _ReservarTabState extends State<ReservarTab> {
   String _nombre = '';
   String _fecha = '';
+  String _fechaDb = '';   // la misma fecha en formato aaaa-mm-dd para Supabase
   final TextEditingController _inputFieldController = TextEditingController();
 
   String _opcionSeleccionadaDropdown = 'Sin dato';
@@ -26,6 +28,7 @@ class _ReservarTabState extends State<ReservarTab> {
     if (calendario != null) {
       setState(() {
         _fecha = '${calendario.day}/${calendario.month}/${calendario.year}';
+        _fechaDb = calendario.toIso8601String().substring(0, 10);
         _inputFieldController.text = _fecha;
       });
     }
@@ -100,11 +103,7 @@ class _ReservarTabState extends State<ReservarTab> {
             TextButton(
               onPressed: () {
                 Navigator.of(context).pop();
-                widget.onReservar({
-                  'nombre': _nombre,
-                  'fecha': _fecha,
-                  'servicio': _opcionSeleccionadaDropdown,
-                });
+                _guardarTurno();
               },
               child: Text('Aceptar'),
             ),
@@ -112,6 +111,33 @@ class _ReservarTabState extends State<ReservarTab> {
         );
       },
     );
+  }
+
+  Future<void> _guardarTurno() async {
+    try {
+      // Busca el id del servicio elegido en la tabla servicios
+      final servicio = await Supabase.instance.client
+          .from('servicios')
+          .select('id')
+          .eq('nombre', _opcionSeleccionadaDropdown)
+          .single();
+
+      // Inserta el turno: cada clave es una columna de la tabla turnos
+      await Supabase.instance.client.from('turnos').insert({
+        'nombre_cliente': _nombre.trim(),
+        'fecha': _fechaDb,
+        'servicio_id': servicio['id'],
+      });
+
+      widget.onReservar({
+        'nombre': _nombre,
+        'fecha': _fecha,
+        'servicio': _opcionSeleccionadaDropdown,
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _alertaError('No se pudo guardar el turno:\n$e');
+    }
   }
 
   @override
