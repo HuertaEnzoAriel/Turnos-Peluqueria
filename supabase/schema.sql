@@ -1,0 +1,79 @@
+-- =============================================================
+-- Turnos Peluquería - esquema de base de datos para Supabase
+-- Pegar todo en: Supabase → SQL Editor → New query → Run
+-- Se puede correr más de una vez sin romper nada.
+-- =============================================================
+
+
+-- -------------------------------------------------------------
+-- 1. Tabla SERVICIOS  (pestaña "Servicios" y página de edición)
+-- -------------------------------------------------------------
+create table if not exists public.servicios (
+  id          bigint generated always as identity primary key,
+  nombre      text    not null unique check (char_length(trim(nombre)) >= 3),
+  precio      integer not null check (precio > 0),
+  -- Nombre del ícono de Material (Icons.content_cut → 'content_cut').
+  -- Flutter no puede guardar un IconData, así que se guarda el nombre.
+  icono       text    not null default 'content_cut',
+  created_at  timestamptz not null default now()
+);
+
+
+-- -------------------------------------------------------------
+-- 2. Tabla TURNOS  (pestañas "Reservar" y "Mis turnos")
+-- -------------------------------------------------------------
+create table if not exists public.turnos (
+  id             bigint generated always as identity primary key,
+  nombre_cliente text   not null check (char_length(trim(nombre_cliente)) > 0),
+  fecha          date   not null,
+  servicio_id    bigint not null references public.servicios (id) on delete restrict,
+  created_at     timestamptz not null default now()
+);
+
+create index if not exists turnos_servicio_id_idx on public.turnos (servicio_id);
+
+
+-- -------------------------------------------------------------
+-- 3. Datos iniciales (los mismos 4 servicios que tenía la app)
+-- -------------------------------------------------------------
+insert into public.servicios (nombre, precio, icono) values
+  ('Corte de pelo',  8000, 'content_cut'),
+  ('Barba',          5000, 'face'),
+  ('Color',         15000, 'palette'),
+  ('Peinado',        7000, 'brush')
+on conflict (nombre) do nothing;
+
+
+-- -------------------------------------------------------------
+-- 4. Permisos
+-- La app usa la clave publishable y el login es local (no usa
+-- Supabase Auth), así que las consultas llegan con el rol "anon".
+-- Solo se habilita lo que la app hace: ver/crear/editar servicios
+-- y ver/crear turnos. No se permite borrar.
+-- -------------------------------------------------------------
+grant select, insert, update on public.servicios to anon, authenticated;
+grant select, insert         on public.turnos    to anon, authenticated;
+
+alter table public.servicios enable row level security;
+alter table public.turnos    enable row level security;
+
+drop policy if exists "servicios_select" on public.servicios;
+drop policy if exists "servicios_insert" on public.servicios;
+drop policy if exists "servicios_update" on public.servicios;
+drop policy if exists "turnos_select"    on public.turnos;
+drop policy if exists "turnos_insert"    on public.turnos;
+
+create policy "servicios_select" on public.servicios
+  for select to anon, authenticated using (true);
+
+create policy "servicios_insert" on public.servicios
+  for insert to anon, authenticated with check (true);
+
+create policy "servicios_update" on public.servicios
+  for update to anon, authenticated using (true) with check (true);
+
+create policy "turnos_select" on public.turnos
+  for select to anon, authenticated using (true);
+
+create policy "turnos_insert" on public.turnos
+  for insert to anon, authenticated with check (fecha >= current_date);
