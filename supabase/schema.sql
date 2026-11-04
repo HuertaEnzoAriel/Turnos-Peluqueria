@@ -89,3 +89,46 @@ create policy "turnos_insert" on public.turnos
 
 create policy "turnos_delete" on public.turnos
   for delete to authenticated using (true);
+
+
+-- -------------------------------------------------------------
+-- 5. Roles (admin / cliente)
+-- Cada usuario de Supabase Auth tiene una fila en "perfiles".
+-- Al crear una cuenta desde la app el trigger le pone 'cliente'.
+-- Para hacer admin a alguien (a mano):
+--   update public.perfiles set rol = 'admin' where email = 'tu@mail.com';
+-- -------------------------------------------------------------
+create table if not exists public.perfiles (
+  id    uuid primary key references auth.users (id) on delete cascade,
+  email text,
+  rol   text not null default 'cliente' check (rol in ('admin', 'cliente'))
+);
+
+create or replace function public.crear_perfil()
+returns trigger
+language plpgsql
+security definer set search_path = public
+as $$
+begin
+  insert into public.perfiles (id, email, rol)
+  values (new.id, new.email, 'cliente');
+  return new;
+end;
+$$;
+
+drop trigger if exists al_crear_usuario on auth.users;
+create trigger al_crear_usuario
+  after insert on auth.users
+  for each row execute function public.crear_perfil();
+
+-- Los usuarios que ya existían quedan como admin
+insert into public.perfiles (id, email, rol)
+select id, email, 'admin' from auth.users
+on conflict (id) do nothing;
+
+revoke all on public.perfiles from anon;
+grant select on public.perfiles to authenticated;
+alter table public.perfiles enable row level security;
+drop policy if exists "perfiles_select" on public.perfiles;
+create policy "perfiles_select" on public.perfiles
+  for select to authenticated using (id = auth.uid());
