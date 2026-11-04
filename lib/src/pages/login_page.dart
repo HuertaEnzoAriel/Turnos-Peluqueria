@@ -130,7 +130,13 @@ class _LoginPageState extends State<LoginPage> {
               child: Text('Ingresar'),
             ),
           ),
-          SizedBox(height: 20),
+          SizedBox(height: 10),
+          Center(
+            child: TextButton(
+              onPressed: () => Navigator.pushNamed(context, 'crear_cuenta'),
+              child: Text('¿No tenés cuenta? Crear cuenta'),
+            ),
+          ),
         ],
       ),
     );

@@ -18,6 +18,17 @@ class _ServiciosTabState extends State<ServiciosTab> {
     'brush': Icons.brush,
   };
 
+  bool _admin = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Solo el admin puede agregar y editar servicios
+    esAdmin().then((valor) {
+      if (mounted) setState(() => _admin = valor);
+    }).catchError((_) {});
+  }
+
   // servicio == null → servicio nuevo; si no, se edita ese
   void _abrirServicio(Map<String, dynamic>? servicio, List<Map<String, dynamic>> servicios) async {
     // Nombres ya usados, para que no se repitan en el dropdown de Reservar
@@ -62,7 +73,7 @@ class _ServiciosTabState extends State<ServiciosTab> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text('Bienvenido, ${widget.email}', style: TextStyle(fontSize: 16, color: AppColores.negro)),
-                      Text('Tocá un servicio para editarlo', style: TextStyle(color: Colors.grey)),
+                      if (_admin) Text('Tocá un servicio para editarlo', style: TextStyle(color: Colors.grey)),
                     ],
                   ),
                 );
@@ -83,12 +94,12 @@ class _ServiciosTabState extends State<ServiciosTab> {
                       color: AppColores.doradoOscuro,
                     ),
                   ),
-                  onTap: () => _abrirServicio(s, servicios),
+                  onTap: _admin ? () => _abrirServicio(s, servicios) : null,
                 ),
               );
             },
           ),
-          floatingActionButton: FloatingActionButton(
+          floatingActionButton: !_admin ? null : FloatingActionButton(
             backgroundColor: AppColores.negro,
             foregroundColor: AppColores.dorado,
             onPressed: () => _abrirServicio(null, servicios),
