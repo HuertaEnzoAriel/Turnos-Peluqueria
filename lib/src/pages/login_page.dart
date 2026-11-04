@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+
 import '../app_theme.dart';
 import '../services/supabase_services.dart';
 
@@ -24,7 +25,11 @@ class _LoginPageState extends State<LoginPage> {
       if (error != null) {
         _alertaError(error);
       } else {
-        Navigator.pushReplacementNamed(context, 'home', arguments: _email.trim());
+        Navigator.pushReplacementNamed(
+          context,
+          'home',
+          arguments: _email.trim(),
+        );
       }
     } catch (e) {
       if (!mounted) return;
@@ -63,7 +68,11 @@ class _LoginPageState extends State<LoginPage> {
             child: CircleAvatar(
               radius: 60,
               backgroundColor: AppColores.negro,
-              child: Icon(Icons.content_cut, size: 60, color: AppColores.dorado),
+              child: Icon(
+                Icons.content_cut,
+                size: 60,
+                color: AppColores.dorado,
+              ),
             ),
           ),
           SizedBox(height: 16),
@@ -86,7 +95,9 @@ class _LoginPageState extends State<LoginPage> {
           TextField(
             keyboardType: TextInputType.emailAddress,
             decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               labelText: 'Email',
               prefixIcon: Icon(Icons.email),
             ),
@@ -100,7 +111,9 @@ class _LoginPageState extends State<LoginPage> {
           TextField(
             obscureText: true,
             decoration: InputDecoration(
-              border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
               labelText: 'Contraseña',
               prefixIcon: Icon(Icons.lock),
             ),
@@ -118,11 +131,6 @@ class _LoginPageState extends State<LoginPage> {
             ),
           ),
           SizedBox(height: 20),
-          Text(
-            'Demo: admin@peluqueria.com / 123456',
-            textAlign: TextAlign.center,
-            style: TextStyle(color: Colors.grey),
-          ),
         ],
       ),
     );
