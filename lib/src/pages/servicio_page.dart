@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_services.dart';
 
 class ServicioPage extends StatefulWidget {
@@ -38,6 +39,48 @@ class _ServicioPageState extends State<ServicioPage> {
           SnackBar(content: Text('No se pudo guardar el servicio: $e')),
         );
       }
+    }
+  }
+
+  void _borrar(Map<String, dynamic> servicio) async {
+    final confirmado = await showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Borrar servicio'),
+          content: Text('¿Seguro que querés borrar "${servicio['nombre']}"?'),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('No'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('Sí, borrar'),
+            ),
+          ],
+        );
+      },
+    );
+    if (confirmado != true) return;
+
+    try {
+      await borrarServicio(servicio['id']);
+      if (!mounted) return;
+      Navigator.pop(context);
+    } on PostgrestException catch (e) {
+      if (!mounted) return;
+      // 23503 = el servicio está usado por algún turno
+      final mensaje = e.code == '23503'
+          ? 'No se puede borrar: hay turnos reservados con este servicio'
+          : 'No se pudo borrar el servicio: ${e.message}';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(mensaje)));
+    } catch (e) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('No se pudo borrar el servicio: $e')),
+      );
     }
   }
 
@@ -108,6 +151,12 @@ class _ServicioPageState extends State<ServicioPage> {
                 onPressed: () => _guardar(servicio),
                 child: Text('Guardar'),
               ),
+              if (servicio != null)
+                TextButton.icon(
+                  onPressed: () => _borrar(servicio),
+                  icon: Icon(Icons.delete, color: Colors.redAccent),
+                  label: Text('Borrar servicio', style: TextStyle(color: Colors.redAccent)),
+                ),
             ],
           ),
         ),

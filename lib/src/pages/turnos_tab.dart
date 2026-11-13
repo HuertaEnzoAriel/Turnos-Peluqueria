@@ -62,7 +62,8 @@ class _TurnosTabState extends State<TurnosTab> {
         }
         final turnos = snapshot.data!;
         if (turnos.isEmpty) {
-          return Center(child: Text('Todavía no reservaste turnos'));
+          // La base solo devuelve los turnos del usuario (el admin ve todos)
+          return Center(child: Text('Todavía no hay turnos reservados'));
         }
         return ListView.builder(
           padding: EdgeInsets.all(16),
