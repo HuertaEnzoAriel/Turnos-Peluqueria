@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_services.dart';
 
 class ReservarTab extends StatefulWidget {
@@ -19,10 +20,40 @@ class _ReservarTabState extends State<ReservarTab> {
   String _opcionSeleccionadaDropdown = 'Sin dato';
   List<Map<String, dynamic>> _servicios = [];
 
+  final TextEditingController _nombreController = TextEditingController();
+  // true = el nombre viene de la cuenta y no se puede cambiar (clientes)
+  bool _nombreFijo = false;
+
   @override
   void initState() {
     super.initState();
+    _cargarNombre();
     _cargarServicios();
+  }
+
+  @override
+  void dispose() {
+    _nombreController.dispose();
+    _inputFieldController.dispose();
+    _horaController.dispose();
+    super.dispose();
+  }
+
+  // Si el usuario no es admin, el nombre se completa solo con el de su cuenta.
+  // El admin lo escribe a mano (reserva a nombre de otras personas).
+  void _cargarNombre() async {
+    try {
+      if (await esAdmin()) return;
+      final nombre = await getNombreCompleto();
+      if (nombre == null || !mounted) return;   // cuenta vieja sin nombre: queda editable
+      setState(() {
+        _nombre = nombre;
+        _nombreController.text = nombre;
+        _nombreFijo = true;
+      });
+    } catch (e) {
+      // sin conexión o error: el campo queda editable
+    }
   }
 
   // Se cargan una sola vez para el dropdown (no en build, porque cada
@@ -91,6 +122,18 @@ class _ReservarTabState extends State<ReservarTab> {
     }
     if (_hora.isEmpty) {
       errores = errores + 'Falta elegir la hora\n';
+    } else {
+      // Horario de atención: de 09:00 a 20:00 (igual que en la base de datos)
+      if (_hora.compareTo('09:00') < 0 || _hora.compareTo('20:00') > 0) {
+        errores = errores + 'La peluquería atiende de 09:00 a 20:00\n';
+      } else if (_fechaDb == DateTime.now().toIso8601String().substring(0, 10)) {
+        // Si el turno es hoy, la hora no puede haber pasado
+        final ahora = TimeOfDay.now();
+        final horaActual = '${ahora.hour.toString().padLeft(2, '0')}:${ahora.minute.toString().padLeft(2, '0')}';
+        if (_hora.compareTo(horaActual) <= 0) {
+          errores = errores + 'Esa hora ya pasó\n';
+        }
+      }
     }
     if (_opcionSeleccionadaDropdown == 'Sin dato') {
       errores = errores + 'Falta elegir el servicio\n';
@@ -158,6 +201,14 @@ class _ReservarTabState extends State<ReservarTab> {
     try {
       await addTurno(_nombre.trim(), _fechaDb, _hora, servicio['id']);
       widget.onReservar();
+    } on PostgrestException catch (e) {
+      if (!mounted) return;
+      // 23505 = ya hay un turno en esa fecha y hora
+      if (e.code == '23505') {
+        _alertaError('Ese horario ya está reservado.\nElegí otra fecha u hora.');
+      } else {
+        _alertaError('No se pudo guardar el turno:\n${e.message}');
+      }
     } catch (e) {
       if (!mounted) return;
       _alertaError('No se pudo guardar el turno:\n$e');
@@ -170,7 +221,9 @@ class _ReservarTabState extends State<ReservarTab> {
       padding: EdgeInsets.all(20),
       children: [
         TextField(
-          textCapitalization: TextCapitalization.sentences,
+          controller: _nombreController,
+          readOnly: _nombreFijo,
+          textCapitalization: TextCapitalization.words,
           decoration: InputDecoration(
             border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
             labelText: 'Nombre del cliente',

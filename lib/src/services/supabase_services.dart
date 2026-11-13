@@ -19,9 +19,14 @@ Future<String?> login(String email, String password) async {
 
 // Crea la cuenta (siempre como 'cliente', lo hace el trigger de la base).
 // Devuelve null si salió bien, o el mensaje de error para mostrar
-Future<String?> registrarse(String email, String password) async {
+// nombre y apellido viajan como metadata y el trigger los copia a "perfiles"
+Future<String?> registrarse(String nombre, String apellido, String email, String password) async {
   try {
-    await supabase.auth.signUp(email: email, password: password);
+    await supabase.auth.signUp(
+      email: email,
+      password: password,
+      data: {'nombre': nombre, 'apellido': apellido},
+    );
     return null;
   } on AuthException catch (e) {
     if (e.code == 'user_already_exists') {
@@ -46,6 +51,19 @@ Future<bool> esAdmin() async {
   return perfil != null && perfil['rol'] == 'admin';
 }
 
+// "Nombre Apellido" del usuario logueado, o null si no tiene (cuentas viejas)
+Future<String?> getNombreCompleto() async {
+  final user = supabase.auth.currentUser;
+  if (user == null) return null;
+  final perfil = await supabase
+      .from('perfiles')
+      .select('nombre, apellido')
+      .eq('id', user.id)
+      .maybeSingle();
+  if (perfil == null || perfil['nombre'] == null) return null;
+  return '${perfil['nombre']} ${perfil['apellido'] ?? ''}'.trim();
+}
+
 Future<void> logout() async {
   await supabase.auth.signOut();
 }
@@ -62,6 +80,11 @@ Future<void> addServicio(String nombre, int precio) async {
 
 Future<void> updateServicio(int id, String nombre, int precio) async {
   await supabase.from('servicios').update({'nombre': nombre, 'precio': precio}).eq('id', id);
+}
+
+// Falla con código 23503 si el servicio ya tiene turnos (on delete restrict)
+Future<void> borrarServicio(int id) async {
+  await supabase.from('servicios').delete().eq('id', id);
 }
 
 // ---------------- TURNOS ----------------

@@ -10,13 +10,17 @@ class CrearCuentaPage extends StatefulWidget {
 }
 
 class _CrearCuentaPageState extends State<CrearCuentaPage> {
+  String _nombre = '';
+  String _apellido = '';
   String _email = '';
   String _password = '';
   String _repetir = '';
 
   void _crear() async {
     final email = _email.trim();
-    if (email.isEmpty || _password.isEmpty || _repetir.isEmpty) {
+    final nombre = _nombre.trim();
+    final apellido = _apellido.trim();
+    if (nombre.isEmpty || apellido.isEmpty || email.isEmpty || _password.isEmpty || _repetir.isEmpty) {
       _alerta('Error', 'Completá todos los campos');
       return;
     }
@@ -33,7 +37,7 @@ class _CrearCuentaPageState extends State<CrearCuentaPage> {
       return;
     }
     try {
-      final error = await registrarse(email, _password);
+      final error = await registrarse(nombre, apellido, email, _password);
       if (!mounted) return;
       if (error != null) {
         _alerta('Error', error);
@@ -103,6 +107,18 @@ class _CrearCuentaPageState extends State<CrearCuentaPage> {
             ),
           ),
           SizedBox(height: 30),
+          TextField(
+            textCapitalization: TextCapitalization.words,
+            decoration: _decoracion('Nombre', Icons.person),
+            onChanged: (valor) => _nombre = valor,
+          ),
+          SizedBox(height: 20),
+          TextField(
+            textCapitalization: TextCapitalization.words,
+            decoration: _decoracion('Apellido', Icons.person_outline),
+            onChanged: (valor) => _apellido = valor,
+          ),
+          SizedBox(height: 20),
           TextField(
             keyboardType: TextInputType.emailAddress,
             decoration: _decoracion('Email', Icons.email),
