@@ -12,6 +12,7 @@ class LoginPage extends StatefulWidget {
 class _LoginPageState extends State<LoginPage> {
   String _email = '';
   String _password = '';
+  bool _mantener = false;   // switch "Mantener sesión iniciada"
 
   void _ingresar() async {
     if (_email.trim().isEmpty || _password.isEmpty) {
@@ -20,7 +21,7 @@ class _LoginPageState extends State<LoginPage> {
     }
     try {
       // El usuario se valida contra Supabase Auth (Authentication → Users)
-      final error = await login(_email.trim(), _password);
+      final error = await login(_email.trim(), _password, _mantener);
       if (!mounted) return;
       if (error != null) {
         _alertaError(error);
@@ -123,7 +124,17 @@ class _LoginPageState extends State<LoginPage> {
               });
             },
           ),
-          SizedBox(height: 30),
+          SizedBox(height: 10),
+          SwitchListTile(
+            title: Text('Mantener sesión iniciada'),
+            value: _mantener,
+            onChanged: (valor) {
+              setState(() {
+                _mantener = valor;
+              });
+            },
+          ),
+          SizedBox(height: 20),
           Center(
             child: ElevatedButton(
               onPressed: _ingresar,

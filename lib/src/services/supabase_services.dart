@@ -1,13 +1,81 @@
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 final supabase = Supabase.instance.client;
 
+// ---------------- SESIÓN ----------------
+
+// La sesión se cierra tras 5 minutos sin actividad del usuario
+const int minutosSesion = 5;
+
+// Última vez que el usuario tocó la pantalla (en memoria, para no leer el
+// disco en cada toque) y última vez que se guardó en el dispositivo
+DateTime? _ultimaActividad;
+DateTime _ultimoGuardado = DateTime.fromMillisecondsSinceEpoch(0);
+
+Future<void> _guardarActividad(DateTime momento) async {
+  _ultimoGuardado = momento;
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setInt('ultima_actividad', momento.millisecondsSinceEpoch);
+}
+
+// Se llama al iniciar sesión. mantener = el switch "Mantener sesión iniciada"
+// del login: si es false, la sesión se cierra al cerrar la app.
+Future<void> guardarInicioSesion(bool mantener) async {
+  final prefs = await SharedPreferences.getInstance();
+  await prefs.setBool('mantener_sesion', mantener);
+  _ultimaActividad = DateTime.now();
+  await _guardarActividad(_ultimaActividad!);
+}
+
+// Se llama en cada toque o gesto del usuario (ver main.dart).
+// Guarda en el dispositivo como mucho una vez cada 10 segundos.
+void registrarActividad() {
+  if (supabase.auth.currentSession == null) return;
+  final ahora = DateTime.now();
+  _ultimaActividad = ahora;
+  if (ahora.difference(_ultimoGuardado).inSeconds >= 10) {
+    _guardarActividad(ahora);
+  }
+}
+
+// Cuánto falta para que venza la sesión (Duration.zero si ya venció o no hay datos)
+Future<Duration> tiempoRestanteSesion() async {
+  var ultima = _ultimaActividad;
+  if (ultima == null) {
+    // App recién abierta: se lee la última actividad guardada
+    final prefs = await SharedPreferences.getInstance();
+    final guardada = prefs.getInt('ultima_actividad');
+    if (guardada == null) return Duration.zero;
+    ultima = DateTime.fromMillisecondsSinceEpoch(guardada);
+  }
+  final vence = ultima.add(Duration(minutes: minutosSesion));
+  final restante = vence.difference(DateTime.now());
+  return restante.isNegative ? Duration.zero : restante;
+}
+
+// Se llama al abrir la app. Supabase ya restauró la sesión guardada;
+// acá se la cierra si no se pidió mantenerla o si pasaron 5 minutos
+// desde la última actividad.
+Future<void> revisarSesion() async {
+  if (supabase.auth.currentSession == null) return;
+  final prefs = await SharedPreferences.getInstance();
+  final mantener = prefs.getBool('mantener_sesion') ?? false;
+  final restante = await tiempoRestanteSesion();
+  if (!mantener || restante == Duration.zero) {
+    // scope local: borra la sesión del dispositivo sin necesitar internet
+    await supabase.auth.signOut(scope: SignOutScope.local);
+  }
+}
+
 // ---------------- LOGIN ----------------
 
+// mantener = true → la sesión sigue abierta si se cierra y se vuelve a abrir la app
 // Devuelve null si entró bien, o el mensaje de error para mostrar
-Future<String?> login(String email, String password) async {
+Future<String?> login(String email, String password, bool mantener) async {
   try {
     await supabase.auth.signInWithPassword(email: email, password: password);
+    await guardarInicioSesion(mantener);
     return null;
   } on AuthException catch (e) {
     if (e.code == 'invalid_credentials') {
@@ -27,6 +95,10 @@ Future<String?> registrarse(String nombre, String apellido, String email, String
       password: password,
       data: {'nombre': nombre, 'apellido': apellido},
     );
+    // Si la cuenta queda logueada, la sesión también dura 5 minutos
+    if (supabase.auth.currentSession != null) {
+      await guardarInicioSesion(false);
+    }
     return null;
   } on AuthException catch (e) {
     if (e.code == 'user_already_exists') {
@@ -65,6 +137,7 @@ Future<String?> getNombreCompleto() async {
 }
 
 Future<void> logout() async {
+  _ultimaActividad = null;
   await supabase.auth.signOut();
 }
 
