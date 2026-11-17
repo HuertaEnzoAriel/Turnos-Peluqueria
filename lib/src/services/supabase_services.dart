@@ -1,5 +1,6 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'notificaciones_service.dart';
 
 final supabase = Supabase.instance.client;
 
@@ -172,15 +173,18 @@ Future<List<Map<String, dynamic>>> getTurnos() async {
 }
 
 // fecha en formato aaaa-mm-dd y hora en formato hh:mm
-Future<void> addTurno(String nombreCliente, String fecha, String hora, int servicioId) async {
-  await supabase.from('turnos').insert({
+Future<int> addTurno(String nombreCliente, String fecha, String hora, int servicioId) async {
+  final turno = await supabase.from('turnos').insert({
     'nombre_cliente': nombreCliente,
     'fecha': fecha,
     'hora': hora,
     'servicio_id': servicioId,
-  });
+  }).select('id').single();
+  return turno['id'];
 }
+
 
 Future<void> borrarTurno(int id) async {
   await supabase.from('turnos').delete().eq('id', id);
+  await cancelarRecordatorio(id);
 }

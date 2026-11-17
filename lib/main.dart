@@ -5,6 +5,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'src/app_theme.dart';
 import 'src/pages/routes/routes.dart';
 import 'src/services/supabase_services.dart';
+import 'src/services/notificaciones_service.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -17,6 +18,7 @@ Future<void> main() async {
   );
   // Cierra la sesión restaurada si no se pidió mantenerla o ya expiró
   await revisarSesion();
+  await initNotificaciones();
   runApp(const MyApp());
 }
 

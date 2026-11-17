@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../services/supabase_services.dart';
+import '../services/notificaciones_service.dart';
+
 
 class ReservarTab extends StatefulWidget {
   final Function() onReservar;
@@ -199,7 +201,8 @@ class _ReservarTabState extends State<ReservarTab> {
     // Busca el id del servicio elegido en el dropdown
     final servicio = _servicios.firstWhere((s) => s['nombre'] == _opcionSeleccionadaDropdown);
     try {
-      await addTurno(_nombre.trim(), _fechaDb, _hora, servicio['id']);
+      final id = await addTurno(_nombre.trim(), _fechaDb, _hora, servicio['id']);
+      await programarRecordatorio(id, _fechaDb, _hora);
       widget.onReservar();
     } on PostgrestException catch (e) {
       if (!mounted) return;
@@ -293,4 +296,4 @@ class _ReservarTabState extends State<ReservarTab> {
       ],
     );
   }
-}
+}
