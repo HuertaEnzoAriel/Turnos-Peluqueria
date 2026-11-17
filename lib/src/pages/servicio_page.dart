@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/servicio.dart';
 import '../services/supabase_services.dart';
 
 class ServicioPage extends StatefulWidget {
@@ -21,7 +22,7 @@ class _ServicioPageState extends State<ServicioPage> {
     super.dispose();
   }
 
-  void _guardar(Map<String, dynamic>? servicio) async {
+  void _guardar(Servicio? servicio) async {
     if (_formKey.currentState!.validate()) {
       final nombre = _nombreCtrl.text.trim();
       final precio = int.parse(_precioCtrl.text.trim());
@@ -29,7 +30,7 @@ class _ServicioPageState extends State<ServicioPage> {
         if (servicio == null) {
           await addServicio(nombre, precio);
         } else {
-          await updateServicio(servicio['id'], nombre, precio);
+          await updateServicio(servicio.id, nombre, precio);
         }
         if (!mounted) return;
         Navigator.pop(context);
@@ -42,13 +43,13 @@ class _ServicioPageState extends State<ServicioPage> {
     }
   }
 
-  void _borrar(Map<String, dynamic> servicio) async {
+  void _borrar(Servicio servicio) async {
     final confirmado = await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text('Borrar servicio'),
-          content: Text('¿Seguro que querés borrar "${servicio['nombre']}"?'),
+          content: Text('¿Seguro que querés borrar "${servicio.nombre}"?'),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
@@ -66,7 +67,7 @@ class _ServicioPageState extends State<ServicioPage> {
     if (confirmado != true) return;
 
     try {
-      await borrarServicio(servicio['id']);
+      await borrarServicio(servicio.id);
       if (!mounted) return;
       Navigator.pop(context);
     } on PostgrestException catch (e) {
@@ -87,13 +88,13 @@ class _ServicioPageState extends State<ServicioPage> {
   @override
   Widget build(BuildContext context) {
     final datos = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>;
-    final Map<String, dynamic>? servicio = datos['servicio'];   // null = servicio nuevo
+    final Servicio? servicio = datos['servicio'];   // null = servicio nuevo
     final List<String> existentes = datos['existentes'];
 
     // Si es edición, los datos actuales se cargan en los campos una sola vez
     if (servicio != null && !_cargado) {
-      _nombreCtrl.text = servicio['nombre'];
-      _precioCtrl.text = '${servicio['precio']}';
+      _nombreCtrl.text = servicio.nombre;
+      _precioCtrl.text = '${servicio.precio}';
       _cargado = true;
     }
 

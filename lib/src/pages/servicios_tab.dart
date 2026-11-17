@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../models/servicio.dart';
 import '../services/supabase_services.dart';
 
 class ServiciosTab extends StatefulWidget {
@@ -30,14 +31,14 @@ class _ServiciosTabState extends State<ServiciosTab> {
   }
 
   // servicio == null → servicio nuevo; si no, se edita ese
-  void _abrirServicio(Map<String, dynamic>? servicio, List<Map<String, dynamic>> servicios) async {
+  void _abrirServicio(Servicio? servicio, List<Servicio> servicios) async {
     // Nombres ya usados, para que no se repitan en el dropdown de Reservar
     List<String> existentes = ['Sin dato'];
     for (var s in servicios) {
-      existentes.add(s['nombre']);
+      existentes.add(s.nombre);
     }
     if (servicio != null) {
-      existentes.remove(servicio['nombre']);
+      existentes.remove(servicio.nombre);
     }
 
     await Navigator.pushNamed(context, 'servicio', arguments: {
@@ -53,7 +54,7 @@ class _ServiciosTabState extends State<ServiciosTab> {
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: getServicios(),
-      builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+      builder: (context, AsyncSnapshot<List<Servicio>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         }
@@ -83,11 +84,11 @@ class _ServiciosTabState extends State<ServiciosTab> {
                 child: ListTile(
                   leading: CircleAvatar(
                     backgroundColor: AppColores.negro,
-                    child: Icon(_iconos[s['icono']] ?? Icons.content_cut, color: AppColores.dorado),
+                    child: Icon(_iconos[s.icono] ?? Icons.content_cut, color: AppColores.dorado),
                   ),
-                  title: Text(s['nombre'], style: TextStyle(fontWeight: FontWeight.w600)),
+                  title: Text(s.nombre, style: TextStyle(fontWeight: FontWeight.w600)),
                   trailing: Text(
-                    '\$${s['precio']}',
+                    '\$${s.precio}',
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.bold,

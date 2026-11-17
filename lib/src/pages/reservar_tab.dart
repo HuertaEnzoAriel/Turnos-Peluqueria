@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/servicio.dart';
 import '../services/supabase_services.dart';
 import '../services/notificaciones_service.dart';
 
@@ -20,7 +21,7 @@ class _ReservarTabState extends State<ReservarTab> {
   final TextEditingController _horaController = TextEditingController();
 
   String _opcionSeleccionadaDropdown = 'Sin dato';
-  List<Map<String, dynamic>> _servicios = [];
+  List<Servicio> _servicios = [];
 
   final TextEditingController _nombreController = TextEditingController();
   // true = el nombre viene de la cuenta y no se puede cambiar (clientes)
@@ -109,7 +110,7 @@ class _ReservarTabState extends State<ReservarTab> {
       DropdownMenuItem(value: 'Sin dato', child: Text('Sin dato')),
     ];
     for (var servicio in _servicios) {
-      lista.add(DropdownMenuItem(value: servicio['nombre'], child: Text(servicio['nombre'])));
+      lista.add(DropdownMenuItem(value: servicio.nombre, child: Text(servicio.nombre)));
     }
     return lista;
   }
@@ -199,9 +200,9 @@ class _ReservarTabState extends State<ReservarTab> {
 
   Future<void> _guardarTurno() async {
     // Busca el id del servicio elegido en el dropdown
-    final servicio = _servicios.firstWhere((s) => s['nombre'] == _opcionSeleccionadaDropdown);
+    final servicio = _servicios.firstWhere((s) => s.nombre == _opcionSeleccionadaDropdown);
     try {
-      final id = await addTurno(_nombre.trim(), _fechaDb, _hora, servicio['id']);
+      final id = await addTurno(_nombre.trim(), _fechaDb, _hora, servicio.id);
       await programarRecordatorio(id, _fechaDb, _hora);
       widget.onReservar();
     } on PostgrestException catch (e) {

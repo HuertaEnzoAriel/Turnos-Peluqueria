@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../app_theme.dart';
+import '../models/turno.dart';
 import '../services/supabase_services.dart';
 
 class TurnosTab extends StatefulWidget {
@@ -9,13 +10,13 @@ class TurnosTab extends StatefulWidget {
 }
 
 class _TurnosTabState extends State<TurnosTab> {
-  Future<bool> _confirmarBorrado(Map<String, dynamic> turno) async {
+  Future<bool> _confirmarBorrado(Turno turno) async {
     final resultado = await showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text('Cancelar turno'),
-          content: Text('¿Seguro que querés borrar el turno de ${turno['nombre_cliente']}?'),
+          content: Text('¿Seguro que querés borrar el turno de ${turno.nombreCliente}?'),
           actionsAlignment: MainAxisAlignment.center,
           actions: [
             TextButton(
@@ -33,8 +34,8 @@ class _TurnosTabState extends State<TurnosTab> {
     return resultado ?? false;   // null si se cierra tocando afuera
   }
 
-  void _borrar(List<Map<String, dynamic>> turnos, int i) async {
-    final id = turnos[i]['id'];
+  void _borrar(List<Turno> turnos, int i) async {
+    final id = turnos[i].id;
     // Se saca de la lista antes del await: Dismissible exige que el
     // elemento ya no esté cuando se vuelve a dibujar
     turnos.removeAt(i);
@@ -53,7 +54,7 @@ class _TurnosTabState extends State<TurnosTab> {
   Widget build(BuildContext context) {
     return FutureBuilder(
       future: getTurnos(),
-      builder: (context, AsyncSnapshot<List<Map<String, dynamic>>> snapshot) {
+      builder: (context, AsyncSnapshot<List<Turno>> snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return Center(child: CircularProgressIndicator());
         }
@@ -70,11 +71,10 @@ class _TurnosTabState extends State<TurnosTab> {
           itemCount: turnos.length,
           itemBuilder: (context, i) {
             final t = turnos[i];
-            // Supabase devuelve la fecha como aaaa-mm-dd y la hora como hh:mm:ss
-            final fecha = DateTime.parse(t['fecha']);
-            final hora = t['hora'] == null ? '' : t['hora'].substring(0, 5);
+            final fecha = t.fecha;
+            final hora = t.hora;
             return Dismissible(
-              key: Key(t['id'].toString()),
+              key: Key(t.id.toString()),
               direction: DismissDirection.startToEnd,
               confirmDismiss: (direction) => _confirmarBorrado(t),
               onDismissed: (direction) => _borrar(turnos, i),
@@ -90,8 +90,8 @@ class _TurnosTabState extends State<TurnosTab> {
                     backgroundColor: AppColores.negro,
                     child: Icon(Icons.event, color: AppColores.dorado),
                   ),
-                  title: Text(t['servicios']['nombre'], style: TextStyle(fontWeight: FontWeight.w600)),
-                  subtitle: Text('${t['nombre_cliente']} - ${fecha.day}/${fecha.month}/${fecha.year} $hora'),
+                  title: Text(t.servicio!.nombre, style: TextStyle(fontWeight: FontWeight.w600)),
+                  subtitle: Text('${t.nombreCliente} - ${fecha.day}/${fecha.month}/${fecha.year} $hora'),
                 ),
               ),
             );

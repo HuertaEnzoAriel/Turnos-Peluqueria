@@ -1,5 +1,8 @@
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import '../models/perfil.dart';
+import '../models/servicio.dart';
+import '../models/turno.dart';
 import 'notificaciones_service.dart';
 
 final supabase = Supabase.instance.client;
@@ -112,29 +115,28 @@ Future<String?> registrarse(String nombre, String apellido, String email, String
   }
 }
 
-// true si el usuario logueado tiene rol 'admin'
-Future<bool> esAdmin() async {
+// Perfil del usuario logueado, o null si no hay sesión o no tiene perfil
+Future<Perfil?> getPerfil() async {
   final user = supabase.auth.currentUser;
-  if (user == null) return false;
-  final perfil = await supabase
+  if (user == null) return null;
+  final fila = await supabase
       .from('perfiles')
-      .select('rol')
+      .select()
       .eq('id', user.id)
       .maybeSingle();
-  return perfil != null && perfil['rol'] == 'admin';
+  return fila == null ? null : Perfil.fromMap(fila);
+}
+
+// true si el usuario logueado tiene rol 'admin'
+Future<bool> esAdmin() async {
+  final perfil = await getPerfil();
+  return perfil != null && perfil.esAdmin;
 }
 
 // "Nombre Apellido" del usuario logueado, o null si no tiene (cuentas viejas)
 Future<String?> getNombreCompleto() async {
-  final user = supabase.auth.currentUser;
-  if (user == null) return null;
-  final perfil = await supabase
-      .from('perfiles')
-      .select('nombre, apellido')
-      .eq('id', user.id)
-      .maybeSingle();
-  if (perfil == null || perfil['nombre'] == null) return null;
-  return '${perfil['nombre']} ${perfil['apellido'] ?? ''}'.trim();
+  final perfil = await getPerfil();
+  return perfil?.nombreCompleto;
 }
 
 Future<void> logout() async {
@@ -144,8 +146,9 @@ Future<void> logout() async {
 
 // ---------------- SERVICIOS ----------------
 
-Future<List<Map<String, dynamic>>> getServicios() async {
-  return await supabase.from('servicios').select('id, nombre, precio, icono').order('id');
+Future<List<Servicio>> getServicios() async {
+  final filas = await supabase.from('servicios').select().order('id');
+  return filas.map((fila) => Servicio.fromMap(fila)).toList();
 }
 
 Future<void> addServicio(String nombre, int precio) async {
@@ -164,12 +167,13 @@ Future<void> borrarServicio(int id) async {
 // ---------------- TURNOS ----------------
 
 // servicios(nombre) trae el nombre del servicio usando la relación servicio_id → servicios.id
-Future<List<Map<String, dynamic>>> getTurnos() async {
-  return await supabase
+Future<List<Turno>> getTurnos() async {
+  final filas = await supabase
       .from('turnos')
-      .select('id, nombre_cliente, fecha, hora, servicios(nombre)')
+      .select('*, servicios(*)')
       .order('fecha')
       .order('hora');
+  return filas.map((fila) => Turno.fromMap(fila)).toList();
 }
 
 // fecha en formato aaaa-mm-dd y hora en formato hh:mm
