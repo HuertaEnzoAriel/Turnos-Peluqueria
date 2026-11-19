@@ -201,10 +201,22 @@ class _ReservarTabState extends State<ReservarTab> {
   Future<void> _guardarTurno() async {
     // Busca el id del servicio elegido en el dropdown
     final servicio = _servicios.firstWhere((s) => s.nombre == _opcionSeleccionadaDropdown);
+    // Se toma antes de los await: al reservar se cambia de pestaña y esta
+    // pantalla se cierra, pero el SnackBar se tiene que mostrar igual
+    final messenger = ScaffoldMessenger.of(context);
     try {
       final id = await addTurno(_nombre.trim(), _fechaDb, _hora, servicio.id);
-      await programarRecordatorio(id, _fechaDb, _hora);
+      // El turno ya quedó guardado. El recordatorio va aparte: si no se
+      // puede programar (sin permiso) no es un error del turno.
+      final conAviso = await programarRecordatorio(id, _fechaDb, _hora);
       widget.onReservar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(conAviso
+              ? 'Turno reservado'
+              : 'Turno reservado, pero sin recordatorio: las notificaciones están desactivadas'),
+        ),
+      );
     } on PostgrestException catch (e) {
       if (!mounted) return;
       // 23505 = ya hay un turno en esa fecha y hora

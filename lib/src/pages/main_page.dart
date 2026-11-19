@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../app_theme.dart';
 import '../services/supabase_services.dart';
+import '../services/notificaciones_service.dart';
 import 'servicios_tab.dart';
 import 'reservar_tab.dart';
 import 'turnos_tab.dart';
@@ -22,6 +23,55 @@ class _MainPageState extends State<MainPage> {
   void initState() {
     super.initState();
     _programarExpiracion();
+    // Se espera a que la pantalla esté dibujada para poder mostrar el diálogo
+    WidgetsBinding.instance.addPostFrameCallback((_) => _revisarPermisoNotificaciones());
+  }
+
+  // Permiso de notificaciones (Android 13+): primero se explica para qué
+  // se usa, después se pide al sistema y se avisa qué pasó.
+  void _revisarPermisoNotificaciones() async {
+    if (await tienePermisoNotificaciones()) return;   // ya lo tiene
+    if (!mounted) return;
+
+    final quiere = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return AlertDialog(
+          title: Text('Recordatorios de turnos'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.notifications_active, size: 48, color: AppColores.dorado),
+              SizedBox(height: 10),
+              Text('Para avisarte antes de cada turno, la app necesita permiso para mostrar notificaciones.'),
+            ],
+          ),
+          actionsAlignment: MainAxisAlignment.center,
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: Text('Ahora no'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: Text('Permitir'),
+            ),
+          ],
+        );
+      },
+    );
+
+    // Solo se muestra el diálogo del sistema si el usuario dijo que sí
+    final aceptado = quiere == true && await pedirPermisoNotificaciones();
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(aceptado
+            ? 'Notificaciones activadas: te vamos a avisar antes de tu turno'
+            : 'Sin notificaciones no vas a recibir recordatorios. Podés activarlas desde Ajustes.'),
+      ),
+    );
   }
 
   @override
