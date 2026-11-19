@@ -4,6 +4,8 @@ import '../models/perfil.dart';
 import '../models/servicio.dart';
 import '../models/turno.dart';
 import 'notificaciones_service.dart';
+import '../models/estado_turno.dart';
+
 
 final supabase = Supabase.instance.client;
 
@@ -192,3 +194,19 @@ Future<void> borrarTurno(int id) async {
   await supabase.from('turnos').delete().eq('id', id);
   await cancelarRecordatorio(id);
 }
+
+Future<void> cambiarEstadoTurno(int id, EstadoTurno estado) async {
+  // .select() devuelve las filas modificadas: si la política RLS no deja
+  // modificar el turno, Supabase no da error y la lista llega vacía
+  final filas = await supabase
+      .from('turnos')
+      .update({'estado': estado.valor})
+      .eq('id', id)
+      .select('id');
+  if (filas.isEmpty) {
+    throw 'No tenés permiso para cambiar este turno (revisá las políticas de la base)';
+  }
+  // Un turno que ya no está activo no necesita recordatorio
+  if (!estado.activo) await cancelarRecordatorio(id);
+}
+

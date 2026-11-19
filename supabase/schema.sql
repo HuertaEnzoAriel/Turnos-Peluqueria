@@ -54,10 +54,8 @@ alter table public.turnos
   add column if not exists user_id uuid default auth.uid()
   references auth.users (id) on delete cascade;
 
--- No se puede reservar el mismo día y hora dos veces.
--- (Si ya hay turnos repetidos, borrarlos a mano antes de correr esto.)
-create unique index if not exists turnos_fecha_hora_unico
-  on public.turnos (fecha, hora);
+-- (La regla de "no reservar el mismo día y hora dos veces" está en la
+-- sección 7, porque depende del estado del turno.)
 
 -- Horario de atención: de 09:00 a 20:00
 -- ("not valid" = no revisa los turnos viejos, solo los nuevos)
@@ -182,3 +180,43 @@ create policy "turnos_insert" on public.turnos
 create policy "turnos_delete" on public.turnos
   for delete to authenticated
   using (user_id = auth.uid() or public.es_admin());
+
+
+-- -------------------------------------------------------------
+-- 7. Estados de los turnos (se puede correr más de una vez)
+--    pendiente → confirmado → completado
+--    pendiente / confirmado → cancelado
+--    confirmado → ausente
+-- -------------------------------------------------------------
+alter table public.turnos
+  add column if not exists estado text not null default 'pendiente';
+
+alter table public.turnos drop constraint if exists turnos_estado_valido;
+alter table public.turnos add constraint turnos_estado_valido
+  check (estado in ('pendiente','confirmado','completado','cancelado','ausente'));
+
+-- Un horario solo queda ocupado por turnos activos: al cancelar un turno
+-- (o marcarlo ausente) el horario se libera. Reemplaza al índice anterior.
+-- (Si ya hay turnos activos repetidos, corregirlos a mano antes de correr esto.)
+drop index if exists public.turnos_fecha_hora_unico;
+drop index if exists public.turnos_horario_unico;
+create unique index turnos_horario_unico
+  on public.turnos (fecha, hora)
+  where estado in ('pendiente','confirmado','completado');
+
+-- Permiso para modificar turnos (antes solo se podía leer, crear y borrar)
+grant update on public.turnos to authenticated;
+
+drop policy if exists "turnos_update_admin"   on public.turnos;
+drop policy if exists "turnos_update_cliente" on public.turnos;
+
+-- El admin puede pasar cualquier turno a cualquier estado
+create policy "turnos_update_admin" on public.turnos
+  for update to authenticated
+  using (public.es_admin()) with check (public.es_admin());
+
+-- El cliente solo puede cancelar sus propios turnos
+create policy "turnos_update_cliente" on public.turnos
+  for update to authenticated
+  using (user_id = auth.uid())
+  with check (user_id = auth.uid() and estado = 'cancelado');

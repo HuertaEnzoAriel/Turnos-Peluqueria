@@ -1,4 +1,6 @@
 import 'servicio.dart';
+import 'estado_turno.dart';
+
 
 // Modelo de la tabla "turnos"
 class Turno {
@@ -8,6 +10,7 @@ class Turno {
   final String hora; // formato hh:mm
   final int servicioId;
   final String? userId;
+  final EstadoTurno estado;
   final DateTime? createdAt;
   final Servicio? servicio; // viene cuando la consulta incluye servicios(...)
 
@@ -20,6 +23,7 @@ class Turno {
     this.userId,
     this.createdAt,
     this.servicio,
+    this.estado = EstadoTurno.pendiente,
   });
 
   // Convierte una fila de Supabase (Map) en un Turno
@@ -35,6 +39,7 @@ class Turno {
       userId: map['user_id'],
       createdAt: map['created_at'] == null ? null : DateTime.parse(map['created_at']),
       servicio: map['servicios'] == null ? null : Servicio.fromMap(map['servicios']),
+      estado: EstadoTurno.desde(map['estado']),
     );
   }
 }
